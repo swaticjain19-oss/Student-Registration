@@ -1,0 +1,157 @@
+/* frontend/src/App.css */
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background-color: #f8f9fa;
+  color: #212529;
+}
+
+.app-container {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+h1 {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.new-habit-card {
+  background: #ffffff;
+  border: 1px solid #dee2e6;
+  border-radius: 10px;
+  padding: 18px;
+  margin-bottom: 24px;
+}
+
+.new-habit-form {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.new-habit-form input {
+  flex: 1;
+  height: 40px;
+  padding: 0 12px;
+  border: 1px solid #ced4da;
+  border-radius: 6px;
+  font-size: 1rem;
+  box-sizing: border-box;
+}
+
+.new-habit-form button {
+  height: 40px;
+  padding: 0 16px;
+  background-color: #0d6efd;
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.new-habit-form button:hover {
+  background-color: #0b5ed7;
+}
+
+.habit-card {
+  background: #ffffff;
+  border: 1px solid #dee2e6;
+  border-radius: 10px;
+  padding: 18px;
+  margin-bottom: 16px;
+  position: relative;
+}
+
+.habit-card h3 {
+  margin-top: 0;
+  margin-bottom: 8px;
+  font-size: 1.25rem;
+}
+
+.streak-text {
+  font-size: 1rem;
+  color: #6c757d;
+  margin-bottom: 14px;
+}
+
+.streak-text.active-streak {
+  font-size: 1.1rem;
+  color: #d9381e;
+  font-weight: bold;
+}
+
+.checkin-btn {
+  display: block;
+  width: 100%;
+  padding: 10px;
+  font-size: 1rem;
+  font-weight: 500;
+  color: #ffffff;
+  background-color: #0d6efd;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+.checkin-btn:hover:not(:disabled) {
+  background-color: #0b5ed7;
+}
+
+.checkin-btn.checked {
+  background-color: #198754;
+  color: #ffffff;
+  opacity: 0.85;
+  cursor: not-allowed;
+}
+
+.history-row {
+  display: flex;
+  flex-direction: row;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.history-box {
+  width: 32px;
+  height: 32px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.history-box.done {
+  background-color: #198754;
+  color: #ffffff;
+}
+
+.history-box.not-done {
+  background-color: #e9ecef;
+  color: #6c757d;
+}
+
+.delete-btn {
+  position: absolute;
+  bottom: 14px;
+  right: 18px;
+  background: none;
+  border: none;
+  color: #6c757d;
+  font-size: 0.85rem;
+  cursor: pointer;
+  padding: 4px;
+}
+
+.delete-btn:hover {
+  color: #dc3545;
+  text-decoration: underline;
+}
