@@ -1,166 +1,120 @@
 // backend/index.js
+// Express server for the Student Registration app.
+// Connects to data.db (SQLite) using better-sqlite3.
+
 const express = require('express');
-const cors = require('cors');
+const cors = require('cors'); // npm install cors (if not already installed)
 const Database = require('better-sqlite3');
 
 const app = express();
-app.use(cors());
-app.use(express.json());
+app.use(cors()); // allow the frontend (different port) to call this API
+app.use(express.json()); // parse JSON request bodies
 
+// Connect to (or create) the database file
 const db = new Database('data.db');
 
-// Create the habits table to store user habits
-db.prepare(`
-  CREATE TABLE IF NOT EXISTS habits (
+// Create the students table if it doesn't already exist
+db.exec(`
+  CREATE TABLE IF NOT EXISTS students (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
-    created_at TEXT NOT NULL
+    email TEXT NOT NULL UNIQUE,
+    phone TEXT,
+    course TEXT NOT NULL,
+    registered_at TEXT NOT NULL
   )
-`).run();
+`);
 
-// Create the checkins table to track completed habit dates
-db.prepare(`
-  CREATE TABLE IF NOT EXISTS checkins (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    habit_id INTEGER NOT NULL,
-    date TEXT NOT NULL,
-    checked_at TEXT NOT NULL,
-    UNIQUE(habit_id, date)
-  )
-`).run();
+// ---------- CREATE ----------
+// Register a new student
+app.post('/students', (req, res) => {
+  const { name, email, phone, course } = req.body;
 
-/**
- * Calculates the current consecutive daily streak for a specific habit.
- * It fetches all check-ins for the habit ordered by date descending, then checks
- * sequentially backwards from today's date to see if a check-in exists for each day.
- * If neither today nor yesterday has a check-in, the streak resets to 0. If yesterday
- * has a check-in but today doesn't yet, the streak is preserved.
- */
-function calculateStreak(habitId) {
-  const checkins = db.prepare('SELECT date FROM checkins WHERE habit_id = ? ORDER BY date DESC').all(habitId);
-  const checkedDates = new Set(checkins.map(c => c.date));
-
-  const now = new Date();
-  const todayStr = now.toISOString().split('T')[0];
-
-  const yesterday = new Date(now);
-  yesterday.setDate(yesterday.getDate() - 1);
-  const yesterdayStr = yesterday.toISOString().split('T')[0];
-
-  if (!checkedDates.has(todayStr) && !checkedDates.has(yesterdayStr)) {
-    return 0;
+  if (!name || !email || !course) {
+    return res.status(400).json({ error: 'name, email, and course are required' });
   }
 
-  let streak = 0;
-  let currentCheckDate = checkedDates.has(todayStr) ? now : yesterday;
-
-  while (true) {
-    const checkStr = currentCheckDate.toISOString().split('T')[0];
-    if (checkedDates.has(checkStr)) {
-      streak++;
-      currentCheckDate.setDate(currentCheckDate.getDate() - 1);
-    } else {
-      break;
-    }
+  const existing = db.prepare('SELECT id FROM students WHERE email = ?').get(email);
+  if (existing) {
+    return res.status(409).json({ error: 'A student with this email is already registered' });
   }
 
-  return streak;
-}
+  const registered_at = new Date().toISOString();
+  const stmt = db.prepare(`
+    INSERT INTO students (name, email, phone, course, registered_at)
+    VALUES (?, ?, ?, ?, ?)
+  `);
+  const info = stmt.run(name, email, phone || '', course, registered_at);
 
-// Route A: Create a new habit
-app.post('/habits', (req, res) => {
-  const { name } = req.body;
-  if (!name || name.trim() === '') {
-    return res.status(400).json({ error: 'name is required' });
-  }
+  res.status(201).json({ id: info.lastInsertRowid, name, email, phone, course, registered_at });
+});
 
-  const createdAt = new Date().toISOString();
-  const info = db.prepare('INSERT INTO habits (name, created_at) VALUES (?, ?)').run(name.trim(), createdAt);
-  
-  res.status(201).json({
-    id: info.lastInsertRowid,
-    name: name.trim(),
-    created_at: createdAt,
-    streak: 0
+// ---------- READ (all students, paginated + optional search) ----------
+// GET /students?page=1&limit=5&search=john
+app.get('/students', (req, res) => {
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 5;
+  const offset = (page - 1) * limit;
+  const search = req.query.search ? `%${req.query.search}%` : '%';
+
+  const totalRow = db
+    .prepare('SELECT COUNT(*) as count FROM students WHERE name LIKE ? OR course LIKE ?')
+    .get(search, search);
+  const total = totalRow.count;
+
+  const rows = db
+    .prepare(
+      `SELECT * FROM students
+       WHERE name LIKE ? OR course LIKE ?
+       ORDER BY registered_at DESC
+       LIMIT ? OFFSET ?`
+    )
+    .all(search, search, limit, offset);
+
+  res.json({
+    data: rows,
+    page,
+    limit,
+    total,
+    totalPages: Math.max(1, Math.ceil(total / limit)),
   });
 });
 
-// Route B: List all habits along with each one's current streak
-app.get('/habits', (req, res) => {
-  const habits = db.prepare('SELECT * FROM habits ORDER BY created_at ASC').all();
-  const habitsWithStreak = habits.map(habit => {
-    habit.streak = calculateStreak(habit.id);
-    return habit;
-  });
-  res.status(200).json(habitsWithStreak);
+// ---------- READ (single student by id) ----------
+app.get('/students/:id', (req, res) => {
+  const student = db.prepare('SELECT * FROM students WHERE id = ?').get(req.params.id);
+  if (!student) return res.status(404).json({ error: 'Student not found' });
+  res.json(student);
 });
 
-// Route C: Mark a habit as done for a specific date (defaults to today)
-app.post('/habits/:id/checkin', (req, res) => {
-  const habitId = parseInt(req.params.id, 10);
-  let { date } = req.body;
+// ---------- UPDATE ----------
+app.put('/students/:id', (req, res) => {
+  const { id } = req.params;
+  const existing = db.prepare('SELECT * FROM students WHERE id = ?').get(id);
+  if (!existing) return res.status(404).json({ error: 'Student not found' });
 
-  if (!date) {
-    date = new Date().toISOString().split('T')[0];
-  }
+  const name = req.body.name ?? existing.name;
+  const email = req.body.email ?? existing.email;
+  const phone = req.body.phone ?? existing.phone;
+  const course = req.body.course ?? existing.course;
 
-  const habit = db.prepare('SELECT id FROM habits WHERE id = ?').get(habitId);
-  if (!habit) {
-    return res.status(404).json({ error: 'Habit not found' });
-  }
+  db.prepare('UPDATE students SET name = ?, email = ?, phone = ?, course = ? WHERE id = ?').run(
+    name,
+    email,
+    phone,
+    course,
+    id
+  );
 
-  try {
-    const checkedAt = new Date().toISOString();
-    const info = db.prepare('INSERT INTO checkins (habit_id, date, checked_at) VALUES (?, ?, ?)').run(habitId, date, checkedAt);
-    const updatedStreak = calculateStreak(habitId);
-
-    res.status(201).json({
-      id: info.lastInsertRowid,
-      habit_id: habitId,
-      date: date,
-      checked_at: checkedAt,
-      streak: updatedStreak
-    });
-  } catch (err) {
-    if (err.code === 'SQLITE_CONSTRAINT_UNIQUE' || err.message.includes('UNIQUE constraint failed')) {
-      return res.status(409).json({ error: 'Already checked in for this date' });
-    }
-    res.status(500).json({ error: 'Internal server error' });
-  }
+  res.json({ ...existing, name, email, phone, course });
 });
 
-// Route D: Return all check-in dates for one habit, for rendering a calendar/history view
-app.get('/habits/:id/checkins', (req, res) => {
-  const habitId = parseInt(req.params.id, 10);
-  const habit = db.prepare('SELECT id FROM habits WHERE id = ?').get(habitId);
-  if (!habit) {
-    return res.status(404).json({ error: 'Habit not found' });
-  }
-
-  const checkins = db.prepare('SELECT date FROM checkins WHERE habit_id = ? ORDER BY date DESC').all(habitId);
-  const dateStrings = checkins.map(c => c.date);
-  res.status(200).json(dateStrings);
+// ---------- DELETE ----------
+app.delete('/students/:id', (req, res) => {
+  const { id } = req.params;
+  db.prepare('DELETE FROM students WHERE id = ?').run(id);
+  res.json({ message: `Student ${id} deleted` });
 });
 
-// Route E: Undo a check-in for a specific date (in case the user misclicked)
-app.delete('/habits/:id/checkin/:date', (req, res) => {
-  const habitId = parseInt(req.params.id, 10);
-  const { date } = req.params;
-
-  db.prepare('DELETE FROM checkins WHERE habit_id = ? AND date = ?').run(habitId, date);
-  res.status(200).json({ message: 'Checkin removed' });
-});
-
-// Route F: Delete a habit entirely, along with all of its check-in history
-app.delete('/habits/:id', (req, res) => {
-  const habitId = parseInt(req.params.id, 10);
-
-  db.prepare('DELETE FROM checkins WHERE habit_id = ?').run(habitId);
-  db.prepare('DELETE FROM habits WHERE id = ?').run(habitId);
-
-  res.status(200).json({ message: `Habit ${habitId} and its checkins deleted` });
-});
-
-app.listen(5000, () => {
-  console.log('Server running on http://localhost:5000');
-});
+const PORT = 5000;
+app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
