@@ -1,157 +1,251 @@
 /* frontend/src/App.css */
-body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  background-color: #f8f9fa;
-  color: #212529;
+
+/* ---------- Theme tokens (light + dark) ---------- */
+:root {
+  --bg: #f7f7fb;
+  --surface: #ffffff;
+  --text: #1f2430;
+  --muted: #6b7280;
+  --border: #e2e4ea;
+  --accent: #0f9d8c;
+  --accent-hover: #0c8377;
+  --danger: #ef4444;
+  --danger-hover: #dc2626;
 }
 
-.app-container {
-  max-width: 640px;
+.app.dark {
+  --bg: #12141c;
+  --surface: #1b1e29;
+  --text: #e8e9ee;
+  --muted: #9aa0ac;
+  --border: #2a2e3b;
+  --accent: #2dd4bf;
+  --accent-hover: #22b8a5;
+  --danger: #f87171;
+  --danger-hover: #ef4444;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+.app {
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  padding: 32px 16px 64px;
+  max-width: 720px;
   margin: 0 auto;
-  padding: 24px;
+  transition: background 0.2s ease, color 0.2s ease;
 }
 
 h1 {
   text-align: center;
-  margin-bottom: 24px;
+  margin-bottom: 8px;
 }
 
-.new-habit-card {
-  background: #ffffff;
-  border: 1px solid #dee2e6;
-  border-radius: 10px;
-  padding: 18px;
-  margin-bottom: 24px;
+h2 {
+  margin: 0 0 12px;
+  font-size: 1.15rem;
 }
 
-.new-habit-form {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.new-habit-form input {
-  flex: 1;
-  height: 40px;
-  padding: 0 12px;
-  border: 1px solid #ced4da;
-  border-radius: 6px;
-  font-size: 1rem;
-  box-sizing: border-box;
-}
-
-.new-habit-form button {
-  height: 40px;
-  padding: 0 16px;
-  background-color: #0d6efd;
-  color: #ffffff;
-  border: none;
-  border-radius: 6px;
-  font-size: 1rem;
-  font-weight: 500;
+/* ---------- Dark mode toggle ---------- */
+.dark-toggle {
+  display: block;
+  margin: 0 0 16px auto;
+  padding: 6px 14px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
   cursor: pointer;
-  white-space: nowrap;
+  font-size: 0.85rem;
 }
 
-.new-habit-form button:hover {
-  background-color: #0b5ed7;
+/* ---------- Cards ---------- */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 20px;
 }
 
-.habit-card {
-  background: #ffffff;
-  border: 1px solid #dee2e6;
-  border-radius: 10px;
-  padding: 18px;
-  margin-bottom: 16px;
+/* ---------- Registration form ---------- */
+.reg-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.reg-form input {
+  width: 100%;
+  padding: 10px 12px;
+  font-size: 0.95rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+}
+
+.form-row {
   position: relative;
 }
 
-.habit-card h3 {
-  margin-top: 0;
-  margin-bottom: 8px;
-  font-size: 1.25rem;
+.char-counter {
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  font-size: 0.75rem;
+  color: var(--muted);
 }
 
-.streak-text {
-  font-size: 1rem;
-  color: #6c757d;
-  margin-bottom: 14px;
+.form-error {
+  color: var(--danger);
+  font-size: 0.85rem;
+  margin: 0;
 }
 
-.streak-text.active-streak {
-  font-size: 1.1rem;
-  color: #d9381e;
-  font-weight: bold;
+.form-buttons {
+  display: flex;
+  gap: 10px;
 }
 
-.checkin-btn {
-  display: block;
-  width: 100%;
-  padding: 10px;
-  font-size: 1rem;
-  font-weight: 500;
-  color: #ffffff;
-  background-color: #0d6efd;
+/* ---------- Buttons ---------- */
+.btn {
   border: none;
-  border-radius: 6px;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-size: 0.9rem;
   cursor: pointer;
-  margin-bottom: 16px;
-  text-align: center;
+  transition: background 0.15s ease;
 }
-
-.checkin-btn:hover:not(:disabled) {
-  background-color: #0b5ed7;
-}
-
-.checkin-btn.checked {
-  background-color: #198754;
-  color: #ffffff;
-  opacity: 0.85;
+.btn:disabled {
+  opacity: 0.5;
   cursor: not-allowed;
 }
+.btn-primary {
+  background: var(--accent);
+  color: #fff;
+}
+.btn-primary:hover:not(:disabled) {
+  background: var(--accent-hover);
+}
+.btn-secondary {
+  background: var(--border);
+  color: var(--text);
+}
+.btn-danger {
+  background: var(--danger);
+  color: #fff;
+}
+.btn-danger:hover {
+  background: var(--danger-hover);
+}
 
-.history-row {
+/* ---------- Section header + search ---------- */
+.section-header {
   display: flex;
-  flex-direction: row;
+  justify-content: space-between;
+  align-items: baseline;
+  flex-wrap: wrap;
   gap: 6px;
   margin-bottom: 12px;
 }
 
-.history-box {
-  width: 32px;
-  height: 32px;
-  border-radius: 4px;
+.last-updated {
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.search-form {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.search-form input {
+  flex: 1;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+}
+
+/* ---------- Loading / empty states ---------- */
+.loading,
+.empty {
+  color: var(--muted);
+  font-style: italic;
+}
+
+/* ---------- Student list ---------- */
+.student-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.student-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+}
+.student-row:last-child {
+  border-bottom: none;
+}
+
+.avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #b95d5d;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 0.85rem;
-  font-weight: 500;
+  font-weight: 700;
+  flex-shrink: 0;
 }
 
-.history-box.done {
-  background-color: #198754;
-  color: #ffffff;
+.student-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
-.history-box.not-done {
-  background-color: #e9ecef;
-  color: #6c757d;
+.student-name {
+  font-weight: 600;
 }
 
-.delete-btn {
-  position: absolute;
-  bottom: 14px;
-  right: 18px;
-  background: none;
-  border: none;
-  color: #6c757d;
+.student-meta {
   font-size: 0.85rem;
-  cursor: pointer;
-  padding: 4px;
+  color: var(--muted);
 }
 
-.delete-btn:hover {
-  color: #dc3545;
-  text-decoration: underline;
+.registered-at {
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.student-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+/* ---------- Pagination ---------- */
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+  margin-top: 14px;
+  font-size: 0.9rem;
 }
